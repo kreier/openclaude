@@ -176,6 +176,8 @@ export type ToolUseContext = {
     querySource?: QuerySource
     /** Optional callback to get the latest tools (e.g., after MCP servers connect mid-query) */
     refreshTools?: () => Tools
+    /** Per-agent provider override from agentRouting config */
+    providerOverride?: { model: string; baseURL: string; apiKey: string }
   }
   abortController: AbortController
   readFileState: FileStateCache
@@ -290,6 +292,14 @@ export type ToolUseContext = {
    * resumeAgentBackground threads one reconstructed from sidechain records.
    */
   contentReplacementState?: ContentReplacementState
+  /**
+   * Interactive REPL only: mirror persisted tool-result replacements back
+   * into the live transcript so the original oversized payloads can be
+   * released from heap once the replacement decision is known.
+   */
+  syncToolResultReplacements?: (
+    replacements: ReadonlyMap<string, string>,
+  ) => void
   /**
    * Parent's rendered system prompt bytes, frozen at turn start.
    * Used by fork subagents to share the parent's prompt cache — re-calling

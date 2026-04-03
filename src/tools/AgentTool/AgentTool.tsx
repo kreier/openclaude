@@ -589,7 +589,19 @@ export const AgentTool = buildTool({
     } | null = null;
     if (effectiveIsolation === 'worktree') {
       const slug = `agent-${earlyAgentId.slice(0, 8)}`;
-      worktreeInfo = await createAgentWorktree(slug);
+      try {
+        worktreeInfo = await createAgentWorktree(slug);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.includes('Cannot create agent worktree: not in a git repository')) {
+          if (isolation === 'worktree') {
+            throw error;
+          }
+          logForDebugging('Agent worktree isolation unavailable outside a git repository; falling back to the current working directory.');
+        } else {
+          throw error;
+        }
+      }
     }
 
     // Fork + worktree: inject a notice telling the child to translate paths
@@ -632,7 +644,8 @@ export const AgentTool = buildTool({
         useExactTools: true
       }),
       worktreePath: worktreeInfo?.worktreePath,
-      description
+      description,
+      agentName: name,
     };
 
     // Helper to wrap execution with a cwd override: explicit cwd arg (KAIROS)
